@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
@@ -23,15 +24,7 @@ public class FilmController {
     }
 
     @PostMapping
-    public Film create(@RequestBody Film film) {
-        if (film.getName() == null || film.getName().isBlank())
-            throw new ValidationException("Название фильма не может быть пустым");
-        if (film.getDescription().length() > 200)
-            throw new ValidationException("Превышена максимальная длина описания 200 символов");
-        if (film.getReleaseDate().isBefore(EARLIEST_DATE))
-            throw new ValidationException("Некоректная дата выхода, кино еще не существовало");
-        if (film.getDuration() <= 0)
-            throw new ValidationException("Длинна фильма должна быть положительным числом");
+    public Film create(@Valid @RequestBody Film film) {
         film.setId(getNextId());
         filmsInfo.put(film.getId(), film);
         return film;
