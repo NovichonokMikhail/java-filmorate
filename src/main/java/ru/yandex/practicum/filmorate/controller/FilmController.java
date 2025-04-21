@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 
@@ -15,11 +14,11 @@ import java.util.HashMap;
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    public static final LocalDate EARLIEST_DATE = LocalDate.of(1895, 12, 28);
     private final HashMap<Long, Film> filmsInfo = new HashMap<>();
 
     @GetMapping
     public Collection<Film> findAllFilms() {
+        log.info("Получение всех пользователей");
         return filmsInfo.values();
     }
 
@@ -27,27 +26,24 @@ public class FilmController {
     public Film create(@Valid @RequestBody Film film) {
         film.setId(getNextId());
         filmsInfo.put(film.getId(), film);
+        log.info("фильм добавлен");
         return film;
     }
 
     @PutMapping
-    public Film update(@RequestBody Film film) {
+    public Film update(@Valid @RequestBody Film film) {
         final Long filmId = film.getId();
         if (filmId == null)
             throw new ValidationException("Id должно быть указано");
         if (!filmsInfo.containsKey(filmId))
             throw new NotFoundException(String.format("Фильма с id = %d, не существует", filmId));
         Film filmToUpdate = filmsInfo.get(filmId);
-        if (film.getName() != null)
-            filmToUpdate.setName(film.getName());
-        if (film.getDescription() != null && film.getDescription().length() <= 200)
-            filmToUpdate.setDescription(film.getDescription());
-        if (film.getReleaseDate().isAfter(EARLIEST_DATE))
-            filmToUpdate.setReleaseDate(film.getReleaseDate());
-        if (film.getName() != null)
-            filmToUpdate.setName(film.getName());
-        if (film.getDuration() != null)
-            filmToUpdate.setDuration(film.getDuration());
+        filmToUpdate.setName(film.getName());
+        filmToUpdate.setDescription(film.getDescription());
+        filmToUpdate.setReleaseDate(film.getReleaseDate());
+        filmToUpdate.setName(film.getName());
+        filmToUpdate.setDuration(film.getDuration());
+        log.info("Информация о фильме успешно обновлена");
         filmsInfo.put(filmId, filmToUpdate);
         return filmToUpdate;
     }
