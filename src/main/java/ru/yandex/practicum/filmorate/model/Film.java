@@ -23,4 +23,5 @@ public class Film {
     LocalDate releaseDate;
     @Positive
     Long duration;
+    long likes;
 }
