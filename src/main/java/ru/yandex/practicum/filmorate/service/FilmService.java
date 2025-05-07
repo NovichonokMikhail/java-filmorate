@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.Collection;
@@ -17,6 +18,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
+    private final UserService userService;
 
     public Collection<Film> findAll() {
         return filmStorage.getAll();
@@ -62,6 +64,7 @@ public class FilmService {
 
     public Film likeFilm(Long filmId, Long userId) {
         Film film = findById(filmId);
+        User user = userService.findUserById(userId);
         Set<Long> likedUsersIds = film.getLikedUsersIds();
         if (likedUsersIds.contains(userId))
             throw new ValidationException("Пользователь уже лайкнул этот фильм");
@@ -72,6 +75,7 @@ public class FilmService {
 
     public Film removeLike(Long filmId, Long userId) {
         Film film = findById(filmId);
+        User user = userService.findUserById(userId);
         Set<Long> likedUsersIds = film.getLikedUsersIds();
         if (!likedUsersIds.contains(userId))
             throw new ValidationException("Пользователь не лайкнул этот фильм");
