@@ -2,12 +2,10 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.Collection;
@@ -18,9 +16,6 @@ import java.util.Set;
 @Service
 @RequiredArgsConstructor
 public class FilmService {
-    @Autowired
-    private final UserService userService;
-    @Autowired
     private final FilmStorage filmStorage;
 
     public Collection<Film> findAll() {
@@ -28,10 +23,7 @@ public class FilmService {
     }
 
     public Film findById(Long id) {
-        Film film = filmStorage.get(id);
-        if (film == null)
-            throw new NotFoundException("Фильм с id " + id + " - не найден");
-        return film;
+        return filmStorage.get(id);
     }
 
     public Film create(Film film) {
@@ -70,22 +62,20 @@ public class FilmService {
 
     public Film likeFilm(Long filmId, Long userId) {
         Film film = findById(filmId);
-        User user = userService.findUserById(userId);
-        Set<Long> userLikedFilms = user.getLikedFilms();
-        if (userLikedFilms.contains(filmId))
+        Set<Long> likedUsersIds = film.getLikedUsersIds();
+        if (likedUsersIds.contains(userId))
             throw new ValidationException("Пользователь уже лайкнул этот фильм");
-        userLikedFilms.add(filmId);
+        likedUsersIds.add(userId);
         film.setLikes(film.getLikes() + 1);
         return film;
     }
 
     public Film removeLike(Long filmId, Long userId) {
         Film film = findById(filmId);
-        User user = userService.findUserById(userId);
-        Set<Long> userLikedFilms = user.getLikedFilms();
-        if (!userLikedFilms.contains(filmId))
+        Set<Long> likedUsersIds = film.getLikedUsersIds();
+        if (!likedUsersIds.contains(userId))
             throw new ValidationException("Пользователь не лайкнул этот фильм");
-        userLikedFilms.remove(filmId);
+        likedUsersIds.remove(userId);
         film.setLikes(film.getLikes() - 1);
         return film;
     }

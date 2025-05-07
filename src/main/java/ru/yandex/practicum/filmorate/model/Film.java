@@ -7,21 +7,24 @@ import lombok.Data;
 import ru.yandex.practicum.filmorate.validators.MovieReleaseDate;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Film.
  */
 @Data
 public class Film {
-    Long id;
+    private Long id;
     @NotBlank
-    String name;
+    private String name;
     @NotBlank
     @Size(max = 200)
-    String description;
+    private String description;
     @MovieReleaseDate
-    LocalDate releaseDate;
+    private LocalDate releaseDate;
     @Positive
-    Long duration;
-    long likes;
+    private Long duration;
+    private long likes;
+    private final Set<Long> likedUsersIds = new HashSet<>();
 }

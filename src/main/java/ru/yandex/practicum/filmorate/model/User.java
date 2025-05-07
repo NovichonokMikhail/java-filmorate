@@ -11,15 +11,14 @@ import java.util.Set;
 
 @Data
 public class User {
-    Long id;
+    private Long id;
     @NotBlank
     @Email
-    String email;
+    private String email;
     @NotBlank
-    String login;
-    String name;
+    private String login;
+    private String name;
     @PastOrPresent
     LocalDate birthday;
-    final Set<Long> friendsList = new HashSet<>();
-    final Set<Long> likedFilms = new HashSet<>();
+    private final Set<Long> friendsList = new HashSet<>();
 }

@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -24,10 +23,7 @@ public class UserService {
     }
 
     public User findUserById(Long id) {
-        User user = userStorage.get(id);
-        if (user == null)
-            throw new NotFoundException("Пользователь с id " + id + " - не найден.");
-        return user;
+        return userStorage.get(id);
     }
 
     public Collection<User> getFriendsByUserId(Long id) {
@@ -52,12 +48,14 @@ public class UserService {
         if (userId == null)
             throw new ValidationException("Id не может быть пустым");
         User userToUpdate = userStorage.get(userId);
-        if (userToUpdate == null)
-            throw new NotFoundException(String.format("Пользователь с id = %d, не существует", userId));
         userToUpdate.setBirthday(user.getBirthday());
+        userToUpdate.setLogin(user.getLogin());
+        if (user.getName() == null)
+            userToUpdate.setName(user.getLogin());
+        else
+            userToUpdate.setName(user.getName());
         userToUpdate.setName(user.getName());
         userToUpdate.setEmail(user.getEmail());
-        userToUpdate.setLogin(user.getLogin());
         userStorage.modify(userToUpdate);
         log.info("информация о пользователе успешно обновлена");
         return userToUpdate;
@@ -65,12 +63,7 @@ public class UserService {
 
     public User addFriend(long userId, long friendId) {
         User user = userStorage.get(userId);
-        // проверка на наличие обоих пользователей
-        if (user == null)
-            throw new NotFoundException("Пользователя с id: " + userId + ". Не существует");
         User friend = userStorage.get(friendId);
-        if (friend == null)
-            throw new NotFoundException("Пользователя с id: " + friendId + ". Не существует");
         // проверка на дружбу
         if (user.getFriendsList().contains(friendId))
             throw new ValidationException(
@@ -84,11 +77,7 @@ public class UserService {
     public User deleteFriend(long userId, long friendId) {
         log.info("удаление друга");
         User user = userStorage.get(userId);
-        if (user == null)
-            throw new NotFoundException("Пользователя с id: " + userId + ". Не существует");
         User friend = userStorage.get(friendId);
-        if (friend == null)
-            throw new NotFoundException("Пользователя с id: " + friendId + ". Не существует");
         if (!user.getFriendsList().contains(friendId))
             return user;
         user.getFriendsList().remove(friendId);
@@ -100,11 +89,7 @@ public class UserService {
     public Collection<User> findCommonFriends(long userId, long otherId) {
         log.info("Поиск общих друзей");
         User user = findUserById(userId);
-        if (user == null)
-            throw new NotFoundException("Пользователя с id: " + userId + ". Не существует");
         User other = userStorage.get(otherId);
-        if (other == null)
-            throw new NotFoundException("Пользователя с id: " + otherId + ". Не существует");
         Set<Long> othersFriends = other.getFriendsList();
         return user.getFriendsList()
                 .stream()
