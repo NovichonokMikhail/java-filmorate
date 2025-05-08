@@ -19,6 +19,6 @@ public class User {
     private String login;
     private String name;
     @PastOrPresent
-    LocalDate birthday;
+    private LocalDate birthday;
     private final Set<Long> friendsList = new HashSet<>();
 }
