@@ -1,0 +1,5 @@
+spring:
+  main:
+    log-startup-info: false
+
+logging.level.org.zalando.logbook: ERROR

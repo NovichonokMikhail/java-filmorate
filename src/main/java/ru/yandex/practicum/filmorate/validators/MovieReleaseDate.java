@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Constraint(validatedBy = MovieReleaseDateValidator.class)
 @Documented
 public @interface MovieReleaseDate {
-    String message() default "{CapitalLetter.invalid}";
+    String message() default "{MovieReleaseDate.invalid}";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default { };
 }
