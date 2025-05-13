@@ -27,4 +27,6 @@ public class Film {
     private Long duration;
     private long likes;
     private final Set<Long> likedUsersIds = new HashSet<>();
+    private final String genre;
+    private final String rating;
 }
