@@ -20,5 +20,6 @@ public class User {
     private String name;
     @PastOrPresent
     private LocalDate birthday;
-    private final Set<Long> friendsList = new HashSet<>();
+    private final Set<Long> unconfirmedFriendsList = new HashSet<>();
+    private final Set<Long> confirmedFriendsList = new HashSet<>();
 }
