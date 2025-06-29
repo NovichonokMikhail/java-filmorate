@@ -3,11 +3,12 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.storageInterfaces.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.storageInterfaces.UserStorage;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -18,38 +19,28 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
-    private final UserService userService;
+    private final UserStorage userStorage;
 
     public Collection<Film> findAll() {
         return filmStorage.getAll();
     }
 
     public Film findById(Long id) {
-        return filmStorage.get(id);
+        if (filmStorage.exists(id))
+            return filmStorage.get(id);
+        throw new NotFoundException("Film was not found");
     }
 
     public Film create(Film film) {
-        film.setId(getNextId());
-        filmStorage.add(film);
-        log.info("фильм добавлен");
-        return film;
+        log.debug("фильм добавлен");
+        return filmStorage.add(film);
     }
 
-    public Film update(Film film) {
-        final Long filmId = film.getId();
-        if (filmId == null)
-            throw new ValidationException("Id должно быть указано");
-        if (filmStorage.get(filmId) == null)
+    public Film update(FilmDto filmDto) {
+        final Long filmId = filmDto.getId();
+        if (!filmStorage.exists(filmId))
             throw new NotFoundException(String.format("Фильма с id = %d, не существует", filmId));
-        Film filmToUpdate = filmStorage.get(filmId);
-        filmToUpdate.setName(film.getName());
-        filmToUpdate.setDescription(film.getDescription());
-        filmToUpdate.setReleaseDate(film.getReleaseDate());
-        filmToUpdate.setName(film.getName());
-        filmToUpdate.setDuration(film.getDuration());
-        log.info("Информация о фильме успешно обновлена");
-        filmStorage.modify(filmToUpdate);
-        return film;
+        return filmStorage.modify(filmDto);
     }
 
     public Collection<Film> findPopular(int size) {
@@ -57,39 +48,32 @@ public class FilmService {
             throw new ValidationException("Некорректный размер выборки. Должен быть больше чем 0");
         return findAll()
                 .stream()
-                .sorted(Comparator.comparingLong(Film::getLikes).reversed())
+                .sorted(Comparator.comparingLong((Film f) -> f.getLikedUsersIds().size()).reversed())
                 .limit(size)
                 .toList();
     }
 
     public Film likeFilm(Long filmId, Long userId) {
+        if (!filmStorage.exists(filmId))
+            throw new NotFoundException("Film does not exist");
         Film film = findById(filmId);
-        User user = userService.findUserById(userId);
+        if (!userStorage.exists(userId))
+            throw new NotFoundException("User does not exist");
         Set<Long> likedUsersIds = film.getLikedUsersIds();
         if (likedUsersIds.contains(userId))
             throw new ValidationException("Пользователь уже лайкнул этот фильм");
-        likedUsersIds.add(userId);
-        film.setLikes(film.getLikes() + 1);
-        return film;
+        return filmStorage.addLike(userId, filmId);
     }
 
     public Film removeLike(Long filmId, Long userId) {
+        if (!filmStorage.exists(filmId))
+            throw new NotFoundException("Film does not exist");
         Film film = findById(filmId);
-        User user = userService.findUserById(userId);
+        if (!userStorage.exists(userId))
+            throw new NotFoundException("User does not exist");
         Set<Long> likedUsersIds = film.getLikedUsersIds();
         if (!likedUsersIds.contains(userId))
-            throw new ValidationException("Пользователь не лайкнул этот фильм");
-        likedUsersIds.remove(userId);
-        film.setLikes(film.getLikes() - 1);
-        return film;
-    }
-
-    private long getNextId() {
-        long maxId = filmStorage.getAll().stream()
-                .map(Film::getId)
-                .mapToLong(Long::longValue)
-                .max()
-                .orElse(0);
-        return ++maxId;
+            throw new ValidationException("Пользователь еще не лайкнул этот фильм");
+        return filmStorage.removeLike(userId, filmId);
     }
 }
