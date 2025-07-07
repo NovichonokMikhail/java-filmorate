@@ -3,12 +3,12 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.storage.storageInterfaces.UserStorage;
 
 import java.util.Collection;
-import java.util.Set;
 
 @Service
 @Slf4j
@@ -25,6 +25,8 @@ public class UserService {
     }
 
     public Collection<User> getFriendsByUserId(Long id) {
+        if (!userStorage.exists(id))
+            throw new NotFoundException("User does not exist");
         return findUserById(id)
                 .getFriendsList()
                 .stream()
@@ -35,73 +37,34 @@ public class UserService {
     public User createUser(User user) {
         if (user.getName() == null)
             user.setName(user.getLogin());
-        user.setId(getNextId());
-        userStorage.add(user);
         log.info("пользователь успешно создан");
-        return user;
+        return userStorage.add(user);
     }
 
-    public User updateUser(User user) {
-        Long userId = user.getId();
-        if (userId == null)
-            throw new ValidationException("Id не может быть пустым");
-        User userToUpdate = userStorage.get(userId);
-        userToUpdate.setBirthday(user.getBirthday());
-        userToUpdate.setLogin(user.getLogin());
-        if (user.getName() == null)
-            userToUpdate.setName(user.getLogin());
-        else
-            userToUpdate.setName(user.getName());
-        userToUpdate.setName(user.getName());
-        userToUpdate.setEmail(user.getEmail());
-        userStorage.modify(userToUpdate);
-        log.info("информация о пользователе успешно обновлена");
-        return userToUpdate;
+    public User updateUser(UserDto userDto) {
+        if (userStorage.exists(userDto.getId()))
+            return userStorage.modify(userDto);
+        throw new NotFoundException("User not found");
     }
 
     public User addFriend(long userId, long friendId) {
-        User user = userStorage.get(userId);
-        User friend = userStorage.get(friendId);
-        // проверка на дружбу
-        if (user.getFriendsList().contains(friendId))
-            throw new ValidationException(
-                    String.format("Пользователи c id: %d и %d, уже являются друзьями", userId, friendId)
-            );
-        user.getFriendsList().add(friendId);
-        friend.getFriendsList().add(userId);
-        return user;
+        log.info("добавление друга");
+        if (userStorage.exists(userId) && userStorage.exists(friendId))
+            return userStorage.addFriend(userId, friendId);
+        throw new NotFoundException("One of the users was not found");
     }
 
     public User deleteFriend(long userId, long friendId) {
         log.info("удаление друга");
-        User user = userStorage.get(userId);
-        User friend = userStorage.get(friendId);
-        if (!user.getFriendsList().contains(friendId))
-            return user;
-        user.getFriendsList().remove(friendId);
-        friend.getFriendsList().remove(userId);
-        log.info("друг удален");
-        return user;
+        if (userStorage.exists(userId) && userStorage.exists(friendId))
+            return userStorage.removeFriend(userId, friendId);
+        throw new NotFoundException("One of the users was not found");
     }
 
     public Collection<User> findCommonFriends(long userId, long otherId) {
         log.info("Поиск общих друзей");
-        User user = findUserById(userId);
-        User other = userStorage.get(otherId);
-        Set<Long> othersFriends = other.getFriendsList();
-        return user.getFriendsList()
-                .stream()
-                .filter(othersFriends::contains)
-                .map(this::findUserById)
-                .toList();
-    }
-
-    private long getNextId() {
-        long maxId = userStorage.getAll()
-                .stream()
-                .mapToLong(User::getId)
-                .max()
-                .orElse(0);
-        return ++maxId;
+        if (userStorage.exists(userId) && userStorage.exists(otherId))
+            return userStorage.findCommonFriends(userId, otherId);
+        throw new NotFoundException("One of the users was not found");
     }
 }

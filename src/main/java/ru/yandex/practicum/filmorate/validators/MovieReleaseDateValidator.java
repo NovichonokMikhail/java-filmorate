@@ -10,6 +10,6 @@ import java.time.LocalDate;
 public class MovieReleaseDateValidator implements ConstraintValidator<MovieReleaseDate, LocalDate> {
     @Override
     public boolean isValid(LocalDate value, ConstraintValidatorContext context) {
-        return value.isAfter(LocalDate.of(1895, 12, 28));
+        return value == null || value.isAfter(LocalDate.of(1895, 12, 28));
     }
 }
